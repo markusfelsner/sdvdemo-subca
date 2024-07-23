@@ -4,11 +4,15 @@ sudo echo "test-app.com 192.168.49.2" >> /etc/hosts
 sudo echo "minikube.data.gov.au 127.0.0.1" >> /etc/hosts
 
 
+read -p "Press enter to continue"
 
 # Minikube starten
 minikube start --embed-certs
 
 minikube addons enable ingress
+
+
+read -p "Press enter to continue"
 
 # Helm installieren (falls nicht bereits installiert)
 if ! command -v helm &> /dev/null
@@ -17,15 +21,20 @@ then
     curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
+
+read -p "Press enter to continue"
+
 # cert-manager installieren
-kubectl create namespace cert-manager
+kubectl create namespace fd
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.12.2
+helm install cert-manager jetstack/cert-manager --namespace fd --version v1.12.2
 
+read -p "Press enter to continue"
 # Warte bis cert-manager bereit ist
-kubectl wait --namespace cert-manager --for=condition=Available --timeout=600s deployment/cert-manager
+kubectl wait --namespace fd --for=condition=Available --timeout=600s deployment/cert-manager
 
+read -p "Press enter to continue"
 # Root-CA und Sub-CA generieren
 openssl genrsa -out root.key 2048
 openssl req -x509 -new -nodes -key root.key -sha256 -days 1024 -out root.crt -subj "/CN=Root CA"
