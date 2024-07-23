@@ -43,7 +43,7 @@ openssl req -new -key sub.key -out sub.csr -subj "/CN=Sub CA"
 openssl x509 -req -in sub.csr -CA root.crt -CAkey root.key -CAcreateserial -out sub.crt -days 500 -sha256
 
 # Sub-CA Secret erstellen
-kubectl create secret tls sub-ca-secret --cert=sub.crt --key=sub.key -n cert-manager
+kubectl create secret tls sub-ca-secret --cert=sub.crt --key=sub.key -n fd
 
 read -p "Press enter to continue"
 # YAML Datei anwenden
