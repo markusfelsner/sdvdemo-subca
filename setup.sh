@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Minikube starten
 minikube start --embed-certs
