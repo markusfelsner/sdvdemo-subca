@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fd
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sdvdemo-config
+data:
+  MYSQL_ROOT_PASSWORD: Sommer123456
+  MYSQL_DATABASE: sdvdemodatabase
+  MYSQL_USER: markusfelsner
+  MYSQL_PASSWORD: Sommer123456
+  MYSQL_DBHOST: mysql-service
+---
+apiVersion: networking.k8s.io/v1 
+kind: Ingress 
+metadata: 
+  annotations: 
+    cert-manager.io/cluster-issuer: selfsigned-issuer 
+  name: local-ingress 
+spec: 
+  rules: 
+  - host: test-app.com 
+    http: 
+      paths: 
+      - backend: 
+          service:
+            name: "frontend-service"
+            port: 
+              number: 80 
+        path: "/"
+        pathType: "Prefix" 
+  tls: 
+  - hosts: 
+    - test-app.com 
+    secretName: test-app-cert-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  labels:
+    app: sdvdemo
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8888
+  selector:
+    app: sdvdemo
+    tier: frontend
+ 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: sdvdemo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sdvdemo
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sdvdemo
+        tier: frontend
+    spec:
+      containers:
+      - image: markusfelsner/sdvdemo-config:1.15
+        name: sdvdemo
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: sdvdemo-config
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_DATABASE          
+        - name: MYSQL_USER
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_USER          
+        - name: MYSQL_PASSWORD
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_PASSWORD
+        - name: MYSQL_DBHOST
+          valueFrom:
+                configMapKeyRef:
+                  name: sdvdemo-config
+                  key: MYSQL_DBHOST            
+        ports:
+          - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  labels:
+    app: sdvdemo
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: sdvdemo
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: sdvdemo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sdvdemo-mysql
+  labels:
+    app: sdvdemo
+spec:
+  serviceName: mysql-service
+  selector:
+    matchLabels:
+      app: sdvdemo
+      tier: mysql
+  template:
+    metadata:
+      labels:
+        app: sdvdemo
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: sdvdemo-config
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_DATABASE          
+        - name: MYSQL_USER
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_USER          
+        - name: MYSQL_PASSWORD
+          valueFrom:
+              configMapKeyRef:
+                name: sdvdemo-config
+                key: MYSQL_PASSWORD
+        - name: MYSQL_DBHOST
+          valueFrom:
+                configMapKeyRef:
+                  name: sdvdemo-config
+                  key: MYSQL_DBHOST
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
