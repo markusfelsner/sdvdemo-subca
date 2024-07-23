@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: sub-ca-issuer
-  namespace: cert-manager
+  namespace: fd
 spec:
   ca:
     secretName: sub-ca-secret
@@ -11,7 +11,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: test-app-cert
-  namespace: default
+  namespace: fd
 spec:
   secretName: test-app-tls
   duration: 90d
@@ -28,7 +28,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: test-app-ingress
-  namespace: default
+  namespace: fd
   annotations:
     cert-manager.io/issuer: "sub-ca-issuer"
 spec:
