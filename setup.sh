@@ -1,7 +1,14 @@
 #!/bin/bash -x
 
+sudo echo "test-app.com 192.168.49.2" >> /etc/hosts
+sudo echo "minikube.data.gov.au 127.0.0.1" >> /etc/hosts
+
+
+
 # Minikube starten
 minikube start --embed-certs
+
+minikube addons enable ingress
 
 # Helm installieren (falls nicht bereits installiert)
 if ! command -v helm &> /dev/null
@@ -29,6 +36,7 @@ openssl x509 -req -in sub.csr -CA root.crt -CAkey root.key -CAcreateserial -out 
 # Sub-CA Secret erstellen
 kubectl create secret tls sub-ca-secret --cert=sub.crt --key=sub.key -n cert-manager
 
+read -p "Press enter to continue"
 # YAML Datei anwenden
 kubectl apply -f resources.yaml
 
