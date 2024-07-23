@@ -1,0 +1,49 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: sub-ca-issuer
+  namespace: cert-manager
+spec:
+  ca:
+    secretName: sub-ca-secret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-app-cert
+  namespace: default
+spec:
+  secretName: test-app-tls
+  duration: 90d
+  renewBefore: 60d
+  commonName: test-app.com
+  isCA: false
+  issuerRef:
+    name: sub-ca-issuer
+    kind: Issuer
+  dnsNames:
+  - test-app.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-app-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/issuer: "sub-ca-issuer"
+spec:
+  tls:
+  - hosts:
+    - test-app.com
+    secretName: test-app-tls
+  rules:
+  - host: test-app.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
